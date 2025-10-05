@@ -31,3 +31,18 @@ def calculate_gc(seq: str) -> float:
         return 0.0
     gc_count = sum(1 for base in seq.upper() if base in ('G', 'C'))
     return (gc_count / len(seq)) * 100.0
+
+
+def calculate_mean_quality(quality_str: str) -> float:
+    """
+    Calculate average Phred+33 quality score.
+
+    Arguments:
+    quality_str: FASTQ quality string (ASCII-encoded)
+
+    Returns mean quality score.
+    """
+    if not quality_str:
+        return 0.0
+    total = sum(ord(char) - 33 for char in quality_str)
+    return total / len(quality_str)
