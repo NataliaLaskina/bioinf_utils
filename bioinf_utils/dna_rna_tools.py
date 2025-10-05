@@ -37,3 +37,19 @@ def reverse(seq: str) -> str:
     Returns reversed sequence.
     """
     return seq[::-1]
+
+
+def complement(seq: str) -> str:
+    """
+    Return the complement of a DNA/RNA sequence.
+
+    Arguments:
+    seq: input DNA or RNA sequence (case-sensitive)
+
+    Returns complementary sequence.
+    """
+    complement_dict = {
+        'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G', 'U': 'A',
+        'a': 't', 't': 'a', 'g': 'c', 'c': 'g', 'u': 'a'
+    }
+    return "".join(complement_dict.get(char, char) for char in seq)
