@@ -13,3 +13,16 @@ def is_nucleic_acid(seq: str) -> bool:
     valid_dna = {'A', 'T', 'G', 'C'}
     valid_rna = {'A', 'U', 'G', 'C'}
     return bases <= valid_dna or bases <= valid_rna
+
+
+def transcribe(seq: str) -> str:
+    """
+    Transcribe DNA to RNA by replacing T with U.
+
+    Arguments:
+    seq: DNA sequence (may contain lowercase letters)
+
+    Returns RNA sequence.
+    """
+    return seq.replace("T", "U").replace("t", "u")
+
