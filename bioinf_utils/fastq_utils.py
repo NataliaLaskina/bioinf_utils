@@ -11,9 +11,9 @@ def normalize_bounds(bounds: Union[int, float, Tuple[float, float]]) -> Tuple[fl
     Raises ValueError if input is invalid.
     """
     if isinstance(bounds, (int, float)):
-        return (0.0, float(bounds))
+        return 0.0, float(bounds)
     elif isinstance(bounds, (tuple, list)) and len(bounds) == 2:
-        return (float(bounds[0]), float(bounds[1]))
+        return float(bounds[0]), float(bounds[1])
     else:
         raise ValueError("Bounds must be a number or a pair of numbers")
 
