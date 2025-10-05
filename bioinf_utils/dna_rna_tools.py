@@ -26,3 +26,14 @@ def transcribe(seq: str) -> str:
     """
     return seq.replace("T", "U").replace("t", "u")
 
+
+def reverse(seq: str) -> str:
+    """
+    Return the reverse of a sequence.
+
+    Arguments:
+    seq: input sequence
+
+    Returns reversed sequence.
+    """
+    return seq[::-1]
