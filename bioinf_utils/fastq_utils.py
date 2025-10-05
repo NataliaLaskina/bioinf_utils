@@ -16,3 +16,18 @@ def normalize_bounds(bounds: Union[int, float, Tuple[float, float]]) -> Tuple[fl
         return (float(bounds[0]), float(bounds[1]))
     else:
         raise ValueError("Bounds must be a number or a pair of numbers")
+
+
+def calculate_gc(seq: str) -> float:
+    """
+    Calculate GC content percentage.
+
+    Arguments:
+    seq: nucleotide sequence (case-insensitive)
+
+    Returns GC content as percentage (0.0 to 100.0).
+    """
+    if not seq:
+        return 0.0
+    gc_count = sum(1 for base in seq.upper() if base in ('G', 'C'))
+    return (gc_count / len(seq)) * 100.0
