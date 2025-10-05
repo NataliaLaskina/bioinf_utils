@@ -96,4 +96,4 @@ def filter_fastq(
 
         filtered[name] = (seq, quality)
 
-    return filtered
+    print(filtered)
