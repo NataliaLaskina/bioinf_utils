@@ -57,3 +57,43 @@ def run_dna_rna_tools(*args: str) -> None:
         print(results[0])
     else:
         print(results)
+
+
+def filter_fastq(
+    seqs: Dict[str, Tuple[str, str]],
+    gc_bounds: Union[int, float, Tuple[float, float]] = (0, 100),
+    length_bounds: Union[int, float, Tuple[int, int]] = (0, 2**32),
+    quality_threshold: float = 0.0
+) -> Dict[str, Tuple[str, str]]:
+    """
+    Filter FASTQ reads by GC content, length, and quality.
+
+    Arguments:
+    seqs: dictionary {read_name: (sequence, quality_string)}
+    gc_bounds: GC content bounds in percent (single value → upper bound)
+    length_bounds: sequence length bounds (single value → upper bound)
+    quality_threshold: minimum average Phred+33 quality
+
+    Returns filtered dictionary of reads.
+    """
+    gc_min, gc_max = normalize_bounds(gc_bounds)
+    len_min, len_max = normalize_bounds(length_bounds)
+
+    filtered: Dict[str, Tuple[str, str]] = {}
+
+    for name, (seq, quality) in seqs.items():
+        seq_len = len(seq)
+        if not (len_min <= seq_len <= len_max):
+            continue
+
+        gc = calculate_gc(seq)
+        if not (gc_min <= gc <= gc_max):
+            continue
+
+        mean_qual = calculate_mean_quality(quality)
+        if mean_qual < quality_threshold:
+            continue
+
+        filtered[name] = (seq, quality)
+
+    return filtered
