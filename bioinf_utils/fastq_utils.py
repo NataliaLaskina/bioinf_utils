@@ -1,5 +1,6 @@
 from typing import Union, Tuple
 
+
 def normalize_bounds(bounds: Union[int, float, Tuple[float, float]]) -> Tuple[float, float]:
     """
     Normalize bounds to a (min, max) tuple.
