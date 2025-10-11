@@ -1,7 +1,3 @@
-"""
-Main module for bioinf_utils package.
-"""
-
 from typing import Dict, Tuple, Union
 from bioinf_utils.dna_rna_tools import (
     is_nucleic_acid,
@@ -12,8 +8,9 @@ from bioinf_utils.dna_rna_tools import (
 )
 from bioinf_utils.fastq_utils import (
     normalize_bounds,
-    calculate_gc,
-    calculate_mean_quality
+    is_gc_within_bounds,
+    is_length_within_bounds,
+    is_quality_above_threshold
 )
 
 
@@ -79,21 +76,16 @@ def filter_fastq(
     gc_min, gc_max = normalize_bounds(gc_bounds)
     len_min, len_max = normalize_bounds(length_bounds)
 
-    filtered: Dict[str, Tuple[str, str]] = {}
+    filtered = {}
 
     for name, (seq, quality) in seqs.items():
-        seq_len = len(seq)
-        if not (len_min <= seq_len <= len_max):
+        if not is_length_within_bounds(seq, (len_min, len_max)):
             continue
-
-        gc = calculate_gc(seq)
-        if not (gc_min <= gc <= gc_max):
+        if not is_gc_within_bounds(seq, (gc_min, gc_max)):
             continue
-
-        mean_qual = calculate_mean_quality(quality)
-        if mean_qual < quality_threshold:
+        if not is_quality_above_threshold(quality, quality_threshold):
             continue
-
         filtered[name] = (seq, quality)
 
-    print(filtered)
+    return filtered
+
