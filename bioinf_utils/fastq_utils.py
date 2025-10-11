@@ -77,3 +77,17 @@ def is_length_within_bounds(seq: str, length_bounds: Tuple[float, float]) -> boo
     l = len(seq)
     len_min, len_max = length_bounds
     return len_min <= l <= len_max
+
+
+def is_quality_above_threshold(quality_str: str, threshold: float) -> bool:
+    """
+    Check if average quality is at or above threshold.
+
+    Arguments:
+    quality_str: FASTQ quality string
+    threshold: minimum acceptable average Phred+33 score
+
+    Returns bool.
+    """
+    mean_qual = calculate_mean_quality(quality_str)
+    return mean_qual >= threshold
