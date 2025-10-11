@@ -47,3 +47,18 @@ def calculate_mean_quality(quality_str: str) -> float:
         return 0.0
     total = sum(ord(char) - 33 for char in quality_str)
     return total / len(quality_str)
+
+
+def is_gc_within_bounds(seq: str, gc_bounds: Tuple[float, float]) -> bool:
+    """
+    Check if GC content of sequence is within given bounds.
+
+    Arguments:
+    seq: nucleotide sequence
+    gc_bounds: (min, max) GC percentage
+
+    Returns bool.
+    """
+    gc = calculate_gc(seq)
+    gc_min, gc_max = gc_bounds
+    return gc_min <= gc <= gc_max
