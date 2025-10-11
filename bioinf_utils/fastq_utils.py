@@ -62,3 +62,18 @@ def is_gc_within_bounds(seq: str, gc_bounds: Tuple[float, float]) -> bool:
     gc = calculate_gc(seq)
     gc_min, gc_max = gc_bounds
     return gc_min <= gc <= gc_max
+
+
+def is_length_within_bounds(seq: str, length_bounds: Tuple[float, float]) -> bool:
+    """
+    Check if sequence length is within given bounds.
+
+    Arguments:
+    seq: nucleotide sequence
+    length_bounds: (min, max) length
+
+    Returns bool.
+    """
+    l = len(seq)
+    len_min, len_max = length_bounds
+    return len_min <= l <= len_max
