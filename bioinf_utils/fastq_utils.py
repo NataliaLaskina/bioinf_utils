@@ -127,3 +127,33 @@ def read_fastq(file_path: str) -> Dict[str, Tuple[str, str]]:
             seqs[read_name] = (seq, quality)
 
     return seqs
+
+
+def write_fastq(seqs: Dict[str, Tuple[str, str]], output_filename: str) -> None:
+    """
+    Write filtered FASTQ sequences to a file in the 'filtered/' directory.
+
+    Arguments:
+    seqs: dictionary of filtered reads
+    output_filename: name of the output file (without path)
+
+    Creates 'filtered/' directory if it doesn't exist.
+    Raises FileExistsError if output path already exists (as file or directory).
+    """
+    output_dir = "filtered"
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, output_filename)
+
+    if os.path.exists(output_path):
+        if os.path.isfile(output_path):
+            raise FileExistsError(f"Output file already exists: {output_path}")
+        else:
+            raise FileExistsError(f"Path already exists and is not a file: {output_path}")
+
+    with open(output_path, 'w') as f:
+        for name, (seq, quality) in seqs.items():
+            f.write(f"@{name}\n")
+            f.write(f"{seq}\n")
+            f.write("+\n")
+            f.write(f"{quality}\n")
+            
