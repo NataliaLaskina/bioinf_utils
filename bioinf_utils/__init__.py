@@ -1,6 +1,7 @@
 """
 Bioinformatics utilities package.
-Provides tools for DNA/RNA manipulation and FASTQ metric calculations.
+Provides tools for DNA/RNA sequence manipulation and FASTQ file processing,
+including reading, writing, and quality/GC/length analysis.
 """
 
 from .dna_rna_tools import (
@@ -17,7 +18,9 @@ from .fastq_utils import (
     calculate_mean_quality,
     is_gc_within_bounds,
     is_length_within_bounds,
-    is_quality_above_threshold
+    is_quality_above_threshold,
+    read_fastq,
+    write_fastq
 )
 
 __all__ = [
@@ -31,5 +34,7 @@ __all__ = [
     "calculate_mean_quality",
     "is_gc_within_bounds",
     "is_length_within_bounds",
-    "is_quality_above_threshold"
+    "is_quality_above_threshold",
+    "read_fastq",
+    "write_fastq"
 ]
