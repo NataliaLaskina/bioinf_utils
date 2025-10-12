@@ -1,4 +1,5 @@
-from typing import Union, Tuple
+import os
+from typing import Dict, Tuple, Union, List, Optional
 
 
 def normalize_bounds(bounds: Union[int, float, Tuple[float, float]]) -> Tuple[float, float]:
@@ -91,3 +92,38 @@ def is_quality_above_threshold(quality_str: str, threshold: float) -> bool:
     """
     mean_qual = calculate_mean_quality(quality_str)
     return mean_qual >= threshold
+
+
+def read_fastq(file_path: str) -> Dict[str, Tuple[str, str]]:
+    """
+    Read a FASTQ file and return its contents as a dictionary.
+
+    Arguments:
+    file_path: path to the input FASTQ file
+
+    Returns:
+    Dictionary {read_name: (sequence, quality_string)}
+    Raises FileNotFoundError if file does not exist.
+    """
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(f"Input file not found: {file_path}")
+
+    seqs = {}
+    with open(file_path, 'r') as f:
+        while True:
+            header = f.readline().strip()
+            if not header:
+                break
+            if not header.startswith('@'):
+                raise ValueError(f"Invalid FASTQ format: expected '@' at start of header, got {header}")
+            seq = f.readline().strip()
+            plus = f.readline().strip()
+            quality = f.readline().strip()
+
+            if not (seq and plus == '+' and quality):
+                raise ValueError("Invalid FASTQ format: missing sequence or quality lines")
+
+            read_name = header[1:]  # remove '@'
+            seqs[read_name] = (seq, quality)
+
+    return seqs
