@@ -97,34 +97,33 @@ def is_quality_above_threshold(quality_str: str, threshold: float) -> bool:
 def read_fastq(file_path: str) -> Dict[str, Tuple[str, str]]:
     """
     Read a FASTQ file and return its contents as a dictionary.
-
-    Arguments:
-    file_path: path to the input FASTQ file
-
-    Returns:
-    Dictionary {read_name: (sequence, quality_string)}
-    Raises FileNotFoundError if file does not exist.
+    Assumes standard 4-line-per-record FASTQ format.
     """
     if not os.path.isfile(file_path):
         raise FileNotFoundError(f"Input file not found: {file_path}")
 
     seqs = {}
     with open(file_path, 'r') as f:
-        while True:
-            header = f.readline().strip()
-            if not header:
-                break
-            if not header.startswith('@'):
-                raise ValueError(f"Invalid FASTQ format: expected '@' at start of header, got {header}")
-            seq = f.readline().strip()
-            plus = f.readline().strip()
-            quality = f.readline().strip()
+        lines = f.readlines()
 
-            if not (seq and plus == '+' and quality):
-                raise ValueError("Invalid FASTQ format: missing sequence or quality lines")
+    lines = [line.strip() for line in lines if line.strip()]
 
-            read_name = header[1:]  # remove '@'
-            seqs[read_name] = (seq, quality)
+    if len(lines) % 4 != 0:
+        raise ValueError("Invalid FASTQ format: total number of lines is not divisible by 4")
+
+    for i in range(0, len(lines), 4):
+        header_line = lines[i]
+        seq = lines[i + 1]
+        plus_line = lines[i + 2]
+        quality = lines[i + 3]
+
+        if not header_line.startswith('@'):
+            raise ValueError(f"Line {i+1}: Expected header starting with '@', got: {header_line}")
+        if plus_line != '+' and not plus_line.startswith('+'):
+            raise ValueError(f"Line {i+3}: Expected '+' line, got: {plus_line}")
+
+        read_name = header_line[1:]
+        seqs[read_name] = (seq, quality)
 
     return seqs
 
@@ -156,4 +155,3 @@ def write_fastq(seqs: Dict[str, Tuple[str, str]], output_filename: str) -> None:
             f.write(f"{seq}\n")
             f.write("+\n")
             f.write(f"{quality}\n")
-            
