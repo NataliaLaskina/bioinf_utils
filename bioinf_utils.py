@@ -87,3 +87,53 @@ def filter_fastq(
 
     write_fastq(filtered, output_fastq)
 
+
+def filter_fastq_stream(
+    input_fastq: str,
+    output_fastq: str,
+    gc_bounds: Union[int, float, Tuple[float, float]] = (0, 100),
+    length_bounds: Union[int, float, Tuple[int, int]] = (0, 2**32),
+    quality_threshold: float = 0.0
+) -> None:
+    """
+    Filter FASTQ reads in streaming mode (memory-efficient).
+    Processes one read at a time without loading all into memory.
+    """
+    if not os.path.isfile(input_fastq):
+        raise FileNotFoundError(f"Input file not found: {input_fastq}")
+
+    gc_min, gc_max = normalize_bounds(gc_bounds)
+    len_min, len_max = normalize_bounds(length_bounds)
+
+    output_dir = "filtered"
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, output_fastq)
+
+    if os.path.exists(output_path):
+        if os.path.isfile(output_path):
+            raise FileExistsError(f"Output file already exists: {output_path}")
+        else:
+            raise FileExistsError(f"Path already exists and is not a file: {output_path}")
+
+    with open(input_fastq, 'r') as infile, open(output_path, 'w') as outfile:
+        while True:
+            header = infile.readline().strip()
+            if not header:
+                break
+            if not header.startswith('@'):
+                raise ValueError(f"Invalid FASTQ format: expected '@', got {header}")
+            seq = infile.readline().strip()
+            plus = infile.readline().strip()
+            quality = infile.readline().strip()
+
+            if not (seq and plus == '+' and quality):
+                raise ValueError("Invalid FASTQ format: incomplete record")
+
+            if not is_length_within_bounds(seq, (len_min, len_max)):
+                continue
+            if not is_gc_within_bounds(seq, (gc_min, gc_max)):
+                continue
+            if not is_quality_above_threshold(quality, quality_threshold):
+                continue
+
+            outfile.write(f"{header}\n{seq}\n+\n{quality}\n")
