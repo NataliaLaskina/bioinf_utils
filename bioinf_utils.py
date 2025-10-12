@@ -1,4 +1,5 @@
-from typing import Dict, Tuple, Union
+import os
+from typing import Union, Tuple
 from bioinf_utils.dna_rna_tools import (
     is_nucleic_acid,
     transcribe,
@@ -7,6 +8,8 @@ from bioinf_utils.dna_rna_tools import (
     reverse_complement
 )
 from bioinf_utils.fastq_utils import (
+    read_fastq,
+    write_fastq,
     normalize_bounds,
     is_gc_within_bounds,
     is_length_within_bounds,
@@ -57,27 +60,22 @@ def run_dna_rna_tools(*args: str) -> None:
 
 
 def filter_fastq(
-    seqs: Dict[str, Tuple[str, str]],
+    input_fastq: str,
+    output_fastq: str,
     gc_bounds: Union[int, float, Tuple[float, float]] = (0, 100),
     length_bounds: Union[int, float, Tuple[int, int]] = (0, 2**32),
     quality_threshold: float = 0.0
-) -> Dict[str, Tuple[str, str]]:
+) -> None:
     """
-    Filter FASTQ reads by GC content, length, and quality.
-
-    Arguments:
-    seqs: dictionary {read_name: (sequence, quality_string)}
-    gc_bounds: GC content bounds in percent (single value → upper bound)
-    length_bounds: sequence length bounds (single value → upper bound)
-    quality_threshold: minimum average Phred+33 quality
-
-    Returns filtered dictionary of reads.
+    Filter FASTQ reads from a file and save results to another file.
+    Loads entire file into memory.
     """
+    seqs = read_fastq(input_fastq)
+
     gc_min, gc_max = normalize_bounds(gc_bounds)
     len_min, len_max = normalize_bounds(length_bounds)
 
     filtered = {}
-
     for name, (seq, quality) in seqs.items():
         if not is_length_within_bounds(seq, (len_min, len_max)):
             continue
@@ -87,5 +85,5 @@ def filter_fastq(
             continue
         filtered[name] = (seq, quality)
 
-    return filtered
+    write_fastq(filtered, output_fastq)
 
