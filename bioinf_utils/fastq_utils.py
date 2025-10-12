@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Tuple, Union, List, Optional
+from typing import Dict, Tuple, Union
 
 
 def normalize_bounds(bounds: Union[int, float, Tuple[float, float]]) -> Tuple[float, float]:
@@ -75,9 +75,9 @@ def is_length_within_bounds(seq: str, length_bounds: Tuple[float, float]) -> boo
 
     Returns bool.
     """
-    l = len(seq)
+    seq_len = len(seq)
     len_min, len_max = length_bounds
-    return len_min <= l <= len_max
+    return len_min <= seq_len <= len_max
 
 
 def is_quality_above_threshold(quality_str: str, threshold: float) -> bool:
