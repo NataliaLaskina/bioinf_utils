@@ -50,3 +50,50 @@ def convert_multiline_fasta_to_oneline(
         if current_header is not None:
             full_seq = ''.join(current_seq_lines)
             outfile.write(f"{current_header}\n{full_seq}\n")
+
+
+def parse_blast_output(input_file: str, output_file: str) -> None:
+    """
+    Parse BLAST output file and extract top hit descriptions.
+
+    Arguments:
+    input_file: path to BLAST results in text format (like example_blast_results.txt)
+    output_file: path to output file with sorted protein names (one per line)
+
+    Extracts the first hit description for each query, removes species in brackets,
+    deduplicates and sorts alphabetically.
+    """
+    if not os.path.isfile(input_file):
+        raise FileNotFoundError(f"Input BLAST file not found: {input_file}")
+
+    protein_names = set()
+    in_significant_alignments = False
+
+    with open(input_file, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+
+            if "Sequences producing significant alignments:" in line:
+                in_significant_alignments = True
+                continue
+
+            if in_significant_alignments and line.startswith('>'):
+                desc = line[1:]
+                if '[' in desc:
+                    protein_name = desc.split('[', 1)[0].strip()
+                else:
+                    protein_name = desc.strip()
+
+                protein_name = protein_name.rstrip('.').strip()
+                if protein_name:
+                    protein_names.add(protein_name)
+
+                in_significant_alignments = False
+
+    sorted_proteins = sorted(protein_names)
+
+    with open(output_file, 'w') as out_f:
+        for name in sorted_proteins:
+            out_f.write(f"{name}\n")
