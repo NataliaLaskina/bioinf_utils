@@ -122,17 +122,6 @@ from bio_files_processor import parse_blast_output
 parse_blast_output("blast_results.txt", "top_hits.txt")
 ```
 
-## Project Structure
-
-bioinf-utils/
-├── bioinf_utils.py             # Entry point: run_dna_rna_tools, filter_fastq
-├── bio_files_processor.py      # FASTA/BLAST utilities
-├── bioinf_utils/               # Core package
-│   ├── __init__.py
-│   ├── dna_rna_tools.py
-│   └── fastq_utils.py
-└── README.md
-
 ## Author
 
 Natalia Laskina 
