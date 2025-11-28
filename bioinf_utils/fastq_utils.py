@@ -94,9 +94,10 @@ def is_quality_above_threshold(quality_str: str, threshold: float) -> bool:
     return mean_qual >= threshold
 
 
-def read_fastq(file_path: str) -> Dict[str, Tuple[str, str]]:
+def read_fastq(file_path: str) -> Dict[str, Tuple[str, str, str]]:
     """
     Read a FASTQ file and return its contents as a dictionary.
+    Each value is a tuple: (sequence, plus_line, quality_string).
     Assumes standard 4-line-per-record FASTQ format.
     """
     if not os.path.isfile(file_path):
@@ -119,21 +120,21 @@ def read_fastq(file_path: str) -> Dict[str, Tuple[str, str]]:
 
         if not header_line.startswith('@'):
             raise ValueError(f"Line {i+1}: Expected header starting with '@', got: {header_line}")
-        if plus_line != '+' and not plus_line.startswith('+'):
+        if not plus_line.startswith('+'):
             raise ValueError(f"Line {i+3}: Expected '+' line, got: {plus_line}")
 
         read_name = header_line[1:]
-        seqs[read_name] = (seq, quality)
+        seqs[read_name] = (seq, plus_line, quality)
 
     return seqs
 
 
-def write_fastq(seqs: Dict[str, Tuple[str, str]], output_filename: str) -> None:
+def write_fastq(seqs: Dict[str, Tuple[str, str, str]], output_filename: str) -> None:
     """
     Write filtered FASTQ sequences to a file in the 'filtered/' directory.
 
     Arguments:
-    seqs: dictionary of filtered reads
+    seqs: dictionary of filtered reads, value format: (seq, plus_line, quality)
     output_filename: name of the output file (without path)
 
     Creates 'filtered/' directory if it doesn't exist.
@@ -150,8 +151,8 @@ def write_fastq(seqs: Dict[str, Tuple[str, str]], output_filename: str) -> None:
             raise FileExistsError(f"Path already exists and is not a file: {output_path}")
 
     with open(output_path, 'w') as f:
-        for name, (seq, quality) in seqs.items():
+        for name, (seq, plus_line, quality) in seqs.items():
             f.write(f"@{name}\n")
             f.write(f"{seq}\n")
-            f.write("+\n")
+            f.write(f"{plus_line}\n")
             f.write(f"{quality}\n")

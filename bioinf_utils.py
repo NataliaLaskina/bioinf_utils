@@ -99,14 +99,14 @@ def filter_fastq(
     len_min, len_max = normalize_bounds(length_bounds)
 
     filtered = {}
-    for name, (seq, quality) in seqs.items():
+    for name, (seq, plus_line, quality) in seqs.items():
         if not is_length_within_bounds(seq, (len_min, len_max)):
             continue
         if not is_gc_within_bounds(seq, (gc_min, gc_max)):
             continue
         if not is_quality_above_threshold(quality, quality_threshold):
             continue
-        filtered[name] = (seq, quality)
+        filtered[name] = (seq, plus_line, quality)
 
     output_path = _prepare_output_path(output_fastq)
     write_fastq(filtered, output_path)
@@ -152,4 +152,4 @@ def filter_fastq_stream(
             if not is_quality_above_threshold(quality, quality_threshold):
                 continue
 
-            outfile.write(f"{header}\n{seq}\n+\n{quality}\n")
+            outfile.write(f"{header}\n{seq}\n{plus}\n{quality}\n")
