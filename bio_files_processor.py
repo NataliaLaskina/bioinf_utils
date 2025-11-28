@@ -57,16 +57,19 @@ def parse_blast_output(input_file: str, output_file: str) -> None:
     Parse BLAST output file and extract top hit descriptions.
 
     Arguments:
-    input_file: path to BLAST results in text format (like example_blast_results.txt)
+    input_file: path to BLAST results in text format
     output_file: path to output file with sorted protein names (one per line)
 
-    Extracts the first hit description for each query, removes species in brackets,
-    deduplicates and sorts alphabetically.
+    Extracts the first hit description for each query,
+    removes species in brackets and common prefixes (e.g., 'MULTISPECIES: '),
+    and saves all results (including duplicates) sorted alphabetically.
     """
     if not os.path.isfile(input_file):
         raise FileNotFoundError(f"Input BLAST file not found: {input_file}")
 
-    protein_names = set()
+    protein_names = []  # Preserve duplicates
+    prefixes_to_remove = ["MULTISPECIES: ", "PREDICTED: "]
+
     in_significant_alignments = False
 
     with open(input_file, 'r') as f:
@@ -80,7 +83,15 @@ def parse_blast_output(input_file: str, output_file: str) -> None:
                 continue
 
             if in_significant_alignments and line.startswith('>'):
-                desc = line[1:]
+                desc = line[1:].strip()
+
+                # Remove known non-protein-name prefixes
+                for prefix in prefixes_to_remove:
+                    if desc.startswith(prefix):
+                        desc = desc[len(prefix):]
+                        break  # only one prefix expected
+
+                # Remove species in brackets, e.g. [Escherichia coli]
                 if '[' in desc:
                     protein_name = desc.split('[', 1)[0].strip()
                 else:
@@ -88,10 +99,11 @@ def parse_blast_output(input_file: str, output_file: str) -> None:
 
                 protein_name = protein_name.rstrip('.').strip()
                 if protein_name:
-                    protein_names.add(protein_name)
+                    protein_names.append(protein_name)
 
                 in_significant_alignments = False
 
+    # Sort all names (duplicates preserved)
     sorted_proteins = sorted(protein_names)
 
     with open(output_file, 'w') as out_f:
