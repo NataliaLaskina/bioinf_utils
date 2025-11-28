@@ -59,12 +59,35 @@ def run_dna_rna_tools(*args: str) -> None:
         print(results)
 
 
+def _prepare_output_path(output_fastq: str) -> str:
+    """
+    Prepare output path by creating directory and checking for existing files.
+
+    Arguments:
+    output_fastq: output filename
+
+    Returns:
+    Full output path
+    """
+    output_dir = "filtered"
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, output_fastq)
+
+    if os.path.exists(output_path):
+        if os.path.isfile(output_path):
+            raise FileExistsError(f"Output file already exists: {output_path}")
+        else:
+            raise FileExistsError(f"Path already exists and is not a file: {output_path}")
+
+    return output_path
+
+
 def filter_fastq(
-    input_fastq: str,
-    output_fastq: str,
-    gc_bounds: Union[int, float, Tuple[float, float]] = (0, 100),
-    length_bounds: Union[int, float, Tuple[int, int]] = (0, 2**32),
-    quality_threshold: float = 0.0
+        input_fastq: str,
+        output_fastq: str = "filtered.fastq",
+        gc_bounds: Union[int, float, Tuple[float, float]] = (0, 100),
+        length_bounds: Union[int, float, Tuple[int, int]] = (0, 2 ** 32),
+        quality_threshold: float = 0.0
 ) -> None:
     """
     Filter FASTQ reads from a file and save results to another file.
@@ -85,15 +108,16 @@ def filter_fastq(
             continue
         filtered[name] = (seq, quality)
 
-    write_fastq(filtered, output_fastq)
+    output_path = _prepare_output_path(output_fastq)
+    write_fastq(filtered, output_path)
 
 
 def filter_fastq_stream(
-    input_fastq: str,
-    output_fastq: str,
-    gc_bounds: Union[int, float, Tuple[float, float]] = (0, 100),
-    length_bounds: Union[int, float, Tuple[int, int]] = (0, 2**32),
-    quality_threshold: float = 0.0
+        input_fastq: str,
+        output_fastq: str = "filtered.fastq",
+        gc_bounds: Union[int, float, Tuple[float, float]] = (0, 100),
+        length_bounds: Union[int, float, Tuple[int, int]] = (0, 2 ** 32),
+        quality_threshold: float = 0.0
 ) -> None:
     """
     Filter FASTQ reads in streaming mode (memory-efficient).
@@ -105,15 +129,7 @@ def filter_fastq_stream(
     gc_min, gc_max = normalize_bounds(gc_bounds)
     len_min, len_max = normalize_bounds(length_bounds)
 
-    output_dir = "filtered"
-    os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, output_fastq)
-
-    if os.path.exists(output_path):
-        if os.path.isfile(output_path):
-            raise FileExistsError(f"Output file already exists: {output_path}")
-        else:
-            raise FileExistsError(f"Path already exists and is not a file: {output_path}")
+    output_path = _prepare_output_path(output_fastq)
 
     with open(input_fastq, 'r') as infile, open(output_path, 'w') as outfile:
         while True:
@@ -126,7 +142,7 @@ def filter_fastq_stream(
             plus = infile.readline().strip()
             quality = infile.readline().strip()
 
-            if not (seq and plus == '+' and quality):
+            if not (seq and plus.startswith('+') and quality):
                 raise ValueError("Invalid FASTQ format: incomplete record")
 
             if not is_length_within_bounds(seq, (len_min, len_max)):
