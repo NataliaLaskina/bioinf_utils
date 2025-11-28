@@ -109,7 +109,8 @@ Parses a BLAST result file (text format) and extracts the top hit description fo
 
 - Extracts protein names from lines starting with >
 - Removes species annotations (text in [...])
-- Outputs a sorted, deduplicated list of protein names (one per line)
+- Preserves all hits (one per query), including duplicates
+- Outputs a sorted list of protein names (one per line)
 
 **Ideal for**:
 Preparing a clean list of candidate proteins for downstream analysis.
