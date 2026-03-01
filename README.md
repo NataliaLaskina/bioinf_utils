@@ -169,16 +169,6 @@ from bio_files_processor import parse_blast_output
 parse_blast_output("blast_results.txt", "top_hits.txt")
 ```
 
-## Project Structure
-
-```
-bioinf_utils/
-├── bioinf_utils.py              # Main module: OOP classes + FASTQ filtering
-├── bio_files_processor.py       # FASTA conversion + BLAST parsing
-├── requirements.txt             # Dependencies (biopython)
-└── README.md                    # This file
-```
-
 ## Dependencies
 
 - Python 3.9+
