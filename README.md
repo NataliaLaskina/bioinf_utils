@@ -1,64 +1,99 @@
 # bioinf_utils
 
-A lightweight Python package for common bioinformatics tasks: DNA/RNA manipulation, FASTQ filtering, FASTA/BLAST parsing, and more.  
-Designed for educational purposes and small-scale analysis without external dependencies (uses only the Python standard library).
+A lightweight Python package for common bioinformatics tasks: DNA/RNA/protein sequence manipulation (OOP), FASTQ filtering (Biopython), FASTA/BLAST parsing, and more.  
+Designed for educational purposes and small-scale analysis.
+
+> ✅ Works with Python 3.9+  
+> ✅ Requires `biopython>=1.81`
 
 ## Installation
 
-No installation required! Just clone the repository and use the scripts directly:
+Clone the repository and install dependencies:
 
-```bash
-git clone https://github.com/NataliaLaskina/bioinf_utils.git
+```
+bash
+git clone https://github.com/NataliaLaskina/bioinf_utils.git  
 cd bioinf_utils
+pip install -r requirements.txt
 ```
 
-All functionality is available via the command-line interface or by importing functions into your own scripts.
-
-> ✅ Works with Python 3.9+
+All functionality is available by importing classes and functions into your own scripts.
 
 ## Usage
 
-### DNA/RNA Tools
+### Object-Oriented Sequence Manipulation
 
-#### run_dna_rna_tools(*sequences, operation)
-Applies a nucleotide sequence operation to one or more input sequences.
+#### Classes Overview
 
-**Supported operations**:
+| Class | Description | Key Methods |
+|-------|-------------|-------------|
+| `DNASequence` | DNA nucleotide sequence | `complement()`, `reverse()`, `reverse_complement()`, `transcribe()` |
+| `RNASequence` | RNA nucleotide sequence | `complement()`, `reverse()`, `reverse_complement()` |
+| `AminoAcidSequence` | Protein (amino acid) sequence | `calculate_molecular_weight()`, `check_alphabet()` |
 
-- is_nucleic_acid - checks if the sequence contains only valid DNA/RNA bases
-- transcribe - DNA → RNA (T → U)
-- reverse - reverses the sequence
-- complement - returns the complementary strand
-- reverse_complement - returns the reverse complement
+All classes inherit from `BiologicalSequence` and support:
+- `len(seq)` — sequence length
+- `seq[i]`, `seq[i:j]` — indexing and slicing
+- `str(seq)` — human-readable string representation
+- `check_alphabet()` — validate sequence characters
 
-**Usage**:
+#### DNASequence Example
 
-```Python
-from bioinf_utils import run_dna_rna_tools
+```
+python
+from bioinf_utils import DNASequence
 
-# Transcribe DNA to RNA
-run_dna_rna_tools("ATGC", "transcribe")  # Output: AUG C
+dna = DNASequence("ATGC")
 
-# Get reverse complement
-run_dna_rna_tools("ATGC", "reverse_complement")  # Output: GCAT
+print(dna.complement())           # TACG (DNASequence)
+print(dna.reverse())              # CGTA (DNASequence)
+print(dna.reverse_complement())   # GCAT (DNASequence)
+print(dna.transcribe())           # AUGC (RNASequence)
+print(dna[1:3])                   # TG
+print(dna.check_alphabet())       # True
 ```
 
-### FASTQ Filtering
+#### RNASequence Example
+
+```
+python
+from bioinf_utils import RNASequence
+
+rna = RNASequence("AUGC")
+
+print(rna.complement())           # UACG (RNASequence)
+print(rna.reverse_complement())   # GCAU (RNASequence)
+```
+
+#### AminoAcidSequence Example
+
+```
+python
+from bioinf_utils import AminoAcidSequence
+
+protein = AminoAcidSequence("MKTAY")
+
+print(len(protein))                           # 5
+print(protein.calculate_molecular_weight())   # 684.8 Da
+print(protein.check_alphabet())               # True
+```
+
+### FASTQ Filtering (Biopython)
 
 #### filter_fastq(input_fastq, output_fastq, gc_bounds=(0,100), length_bounds=(0,2**32), quality_threshold=0.0)
+
 Filters reads from a FASTQ file based on:
 
-- **GC content** (gc_bounds): e.g., (20, 80) or 44.4 (upper bound only)
-- **Read length** (length_bounds): e.g., (50, 300)
-- **Average Phred+33 quality** (quality_threshold)
+- **GC content** (`gc_bounds`): e.g., `(20, 80)` or `44.4` (upper bound only)
+- **Read length** (`length_bounds`): e.g., `(50, 300)`
+- **Average Phred+33 quality** (`quality_threshold`)
 
-✅ **Use this function for most cases**.
-It reads the entire file into memory, applies filtering, and writes results to filtered/{output_fastq}.
-Supports files with or without trailing newlines.
+✅ Loads all records into memory, applies filtering, and writes results to `filtered/{output_fastq}`.
 
 **Example**:
 
-```Python
+```
+python
 from bioinf_utils import filter_fastq
 
 filter_fastq(
@@ -70,60 +105,92 @@ filter_fastq(
 )
 ```
 
-#### filter_fastq_stream(input_fastq, output_fastq, ...) (optional)
+#### filter_fastq_stream(input_fastq, output_fastq, ...)
+
 Memory-efficient streaming version: processes one read at a time without loading the whole file into RAM.
 
-⚠️ **Important**: Requires strict FASTQ formatting:
+✅ Ideal for large FASTQ files (>1 GB).
 
-- Each record must occupy exactly 4 lines
-- Every line must end with a newline character (\n)
+⚠️ **Important**: Requires standard FASTQ formatting (4 lines per record, newline at end of each line).
 
-If your FASTQ file was generated by standard tools (e.g., Illumina), it should work.
-But if the file is malformed (e.g., missing \n at the end of quality lines), use filter_fastq instead.
+**Example**:
 
-**Use only when*:
+```
+python
+from bioinf_utils import filter_fastq_stream
 
-- Working with very large FASTQ files (>1 GB)
-- You are sure the input format is clean
+filter_fastq_stream(
+    input_fastq="large_reads.fastq",
+    output_fastq="filtered_reads.fastq",
+    gc_bounds=(30, 70),
+    length_bounds=(100, 500),
+    quality_threshold=20.0
+)
+```
 
 ### FASTA Processing
 
 #### convert_multiline_fasta_to_oneline(input_fasta, output_fasta=None)
+
 Converts a multiline FASTA file (where sequences span multiple lines) into oneline format (one sequence per line).
 
-- If output_fasta is not provided, output is saved as {input}_oneline.fasta.
+- If `output_fasta` is not provided, output is saved as `{input}_oneline.fasta`.
 - Ensures no accidental overwriting of existing files.
 
 **Example**:
 
-```Python
+```
+python
 from bio_files_processor import convert_multiline_fasta_to_oneline
 
 convert_multiline_fasta_to_oneline("genome.fasta", "genome_oneline.fasta")
-```
+``
 
-#### BLAST Output Parsing
+### BLAST Output Parsing
 
-**parse_blast_output(input_file, output_file)**
+#### parse_blast_output(input_file, output_file)
+
 Parses a BLAST result file (text format) and extracts the top hit description for each query.
 
-- Extracts protein names from lines starting with >
-- Removes species annotations (text in [...])
+- Extracts protein names from lines starting with `>`
+- Removes species annotations (text in `[...]`)
+- Removes common prefixes (`MULTISPECIES:`, `PREDICTED:`)
 - Preserves all hits (one per query), including duplicates
 - Outputs a sorted list of protein names (one per line)
 
-**Ideal for**:
-Preparing a clean list of candidate proteins for downstream analysis.
+**Ideal for**: Preparing a clean list of candidate proteins for downstream analysis.
 
 **Example**:
 
-```Python
+```
+python
 from bio_files_processor import parse_blast_output
 
 parse_blast_output("blast_results.txt", "top_hits.txt")
 ```
 
+## Project Structure
+
+```
+bioinf_utils/
+├── bioinf_utils.py              # Main module: OOP classes + FASTQ filtering
+├── bio_files_processor.py       # FASTA conversion + BLAST parsing
+├── requirements.txt             # Dependencies (biopython)
+└── README.md                    # This file
+```
+
+## Dependencies
+
+- Python 3.9+
+- Biopython >= 1.81
+
+Install with:
+```
+bash
+pip install -r requirements.txt
+```
+
 ## Author
 
-Natalia Laskina 
-lask.natalia@gmail.com  
+Natalia Laskina  
+lask.natalia@gmail.com
