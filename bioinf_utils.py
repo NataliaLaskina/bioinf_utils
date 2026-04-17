@@ -1,9 +1,22 @@
 import os
+import logging
 from abc import ABC, abstractmethod
-from typing import Union, Tuple
+from typing import Union, Tuple, Optional
 
 from Bio import SeqIO
 from Bio.SeqUtils import gc_fraction
+
+
+# Logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('bioinf_utils.log', encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 
 class BiologicalSequence(ABC):
@@ -28,14 +41,18 @@ class BiologicalSequence(ABC):
         """Return the length of the sequence."""
         return len(self._sequence)
 
-    def __getitem__(self, index: Union[int, slice]) -> str:
+    def __getitem__(self, index: Union[int, slice]) -> "BiologicalSequence":
         """
         Support indexing and slicing.
 
         Returns:
-            A substring or single character.
+            A new instance of the same class for slices,
+            or a single character string for integer index.
         """
-        return self._sequence[index]
+        result = self._sequence[index]
+        if isinstance(index, slice):
+            return self.__class__(result)
+        return result
 
     def __str__(self) -> str:
         """Return a human-readable string representation."""
@@ -119,8 +136,7 @@ class DNASequence(NucleicAcidSequence):
     """
 
     _complement_map: dict[str, str] = {
-        'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G',
-        'a': 't', 't': 'a', 'g': 'c', 'c': 'g'
+        'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G'
     }
     _valid_bases: set[str] = {'A', 'T', 'G', 'C'}
 
@@ -143,8 +159,7 @@ class RNASequence(NucleicAcidSequence):
     """
 
     _complement_map: dict[str, str] = {
-        'A': 'U', 'U': 'A', 'G': 'C', 'C': 'G',
-        'a': 'u', 'u': 'a', 'g': 'c', 'c': 'g'
+        'A': 'U', 'U': 'A', 'G': 'C', 'C': 'G'
     }
     _valid_bases: set[str] = {'A', 'U', 'G', 'C'}
 
@@ -226,10 +241,10 @@ def _prepare_output_path(output_fastq: str) -> str:
     Prepare output path by creating directory and checking for existing files.
 
     Arguments:
-    output_fastq: output filename
+        output_fastq: output filename
 
     Returns:
-    Full output path
+        Full output path
 
     Raises:
         FileExistsError: If output path already exists
@@ -245,6 +260,43 @@ def _prepare_output_path(output_fastq: str) -> str:
             raise FileExistsError(f"Path already exists and is not a file: {output_path}")
 
     return output_path
+
+
+def _check_record(
+    record,
+    gc_min: float,
+    gc_max: float,
+    len_min: int,
+    len_max: int,
+    quality_threshold: float
+) -> bool:
+    """
+    Check if a FASTQ record passes all filtering criteria.
+
+    Arguments:
+        record: Biopython SeqRecord object
+        gc_min: Minimum GC content (%)
+        gc_max: Maximum GC content (%)
+        len_min: Minimum sequence length
+        len_max: Maximum sequence length
+        quality_threshold: Minimum average Phred quality score
+
+    Returns:
+        True if record passes all filters, False otherwise
+    """
+    seq_len = len(record.seq)
+    if not (len_min <= seq_len <= len_max):
+        return False
+
+    gc_content = gc_fraction(record.seq) * 100
+    if not (gc_min <= gc_content <= gc_max):
+        return False
+
+    mean_quality = sum(record.letter_annotations["phred_quality"]) / seq_len
+    if mean_quality < quality_threshold:
+        return False
+
+    return True
 
 
 def filter_fastq(
@@ -270,33 +322,25 @@ def filter_fastq(
         FileNotFoundError: If input file does not exist.
         FileExistsError: If output file already exists.
     """
+    logger.info(f"Starting FASTQ filtering: input={input_fastq}, output={output_fastq}")
+    logger.info(f"Parameters: gc_bounds={gc_bounds}, length_bounds={length_bounds}, quality_threshold={quality_threshold}")
+
     if not os.path.isfile(input_fastq):
-        raise FileNotFoundError(f"Input file not found: {input_fastq}")
+        error_msg = f"Input file not found: {input_fastq}"
+        logger.error(error_msg)
+        raise FileNotFoundError(error_msg)
 
     gc_min, gc_max = normalize_bounds(gc_bounds)
     len_min, len_max = normalize_bounds(length_bounds)
-
     output_path = _prepare_output_path(output_fastq)
 
     filtered_records = []
-
     for record in SeqIO.parse(input_fastq, "fastq"):
-        seq_len = len(record.seq)
-
-        if not (len_min <= seq_len <= len_max):
-            continue
-
-        gc_content = gc_fraction(record.seq) * 100
-        if not (gc_min <= gc_content <= gc_max):
-            continue
-
-        mean_quality = sum(record.letter_annotations["phred_quality"]) / seq_len
-        if mean_quality < quality_threshold:
-            continue
-
-        filtered_records.append(record)
+        if _check_record(record, gc_min, gc_max, len_min, len_max, quality_threshold):
+            filtered_records.append(record)
 
     SeqIO.write(filtered_records, output_path, "fastq")
+    logger.info(f"Successfully filtered {len(filtered_records)} records. Output saved to {output_path}")
 
 
 def filter_fastq_stream(
@@ -323,29 +367,21 @@ def filter_fastq_stream(
         FileNotFoundError: If input file does not exist.
         FileExistsError: If output file already exists.
     """
+    logger.info(f"Starting FASTQ streaming filter: input={input_fastq}, output={output_fastq}")
+
     if not os.path.isfile(input_fastq):
-        raise FileNotFoundError(f"Input file not found: {input_fastq}")
+        error_msg = f"Input file not found: {input_fastq}"
+        logger.error(error_msg)
+        raise FileNotFoundError(error_msg)
 
     gc_min, gc_max = normalize_bounds(gc_bounds)
     len_min, len_max = normalize_bounds(length_bounds)
-
     output_path = _prepare_output_path(output_fastq)
 
     def filtered_records():
         for record in SeqIO.parse(input_fastq, "fastq"):
-            seq_len = len(record.seq)
-
-            if not (len_min <= seq_len <= len_max):
-                continue
-
-            gc_content = gc_fraction(record.seq) * 100
-            if not (gc_min <= gc_content <= gc_max):
-                continue
-
-            mean_quality = sum(record.letter_annotations["phred_quality"]) / seq_len
-            if mean_quality < quality_threshold:
-                continue
-
-            yield record
+            if _check_record(record, gc_min, gc_max, len_min, len_max, quality_threshold):
+                yield record
 
     SeqIO.write(filtered_records(), output_path, "fastq")
+    logger.info("Streaming filtering completed successfully")
