@@ -5,13 +5,13 @@ Designed for educational purposes and small-scale analysis.
 
 > ✅ Works with Python 3.9+  
 > ✅ Requires `biopython>=1.81`
+> ✅ Requires `pytest >= 7.0.0`
 
 ## Installation
 
 Clone the repository and install dependencies:
 
-```
-bash
+```bash
 git clone https://github.com/NataliaLaskina/bioinf_utils.git  
 cd bioinf_utils
 pip install -r requirements.txt
@@ -39,8 +39,7 @@ All classes inherit from `BiologicalSequence` and support:
 
 #### DNASequence Example
 
-```
-python
+```python
 from bioinf_utils import DNASequence
 
 dna = DNASequence("ATGC")
@@ -55,8 +54,7 @@ print(dna.check_alphabet())       # True
 
 #### RNASequence Example
 
-```
-python
+```python
 from bioinf_utils import RNASequence
 
 rna = RNASequence("AUGC")
@@ -67,8 +65,7 @@ print(rna.reverse_complement())   # GCAU (RNASequence)
 
 #### AminoAcidSequence Example
 
-```
-python
+```python
 from bioinf_utils import AminoAcidSequence
 
 protein = AminoAcidSequence("MKTAY")
@@ -92,8 +89,7 @@ Filters reads from a FASTQ file based on:
 
 **Example**:
 
-```
-python
+```python
 from bioinf_utils import filter_fastq
 
 filter_fastq(
@@ -115,8 +111,7 @@ Memory-efficient streaming version: processes one read at a time without loading
 
 **Example**:
 
-```
-python
+```python
 from bioinf_utils import filter_fastq_stream
 
 filter_fastq_stream(
@@ -139,8 +134,7 @@ Converts a multiline FASTA file (where sequences span multiple lines) into oneli
 
 **Example**:
 
-```
-python
+```python
 from bio_files_processor import convert_multiline_fasta_to_oneline
 
 convert_multiline_fasta_to_oneline("genome.fasta", "genome_oneline.fasta")
@@ -162,21 +156,52 @@ Parses a BLAST result file (text format) and extracts the top hit description fo
 
 **Example**:
 
-```
-python
+```python
 from bio_files_processor import parse_blast_output
 
 parse_blast_output("blast_results.txt", "top_hits.txt")
+```
+
+## Command-Line Interface (CLI)
+
+The package includes a command-line interface for quick access to common functions.
+
+### Usage
+
+```bash
+# Analyze a sequence
+python main.py seq-info ATGC --type dna
+
+# Filter FASTQ file
+python main.py filter-fastq input.fastq output.fastq --gc-min 30 --gc-max 70 --quality 20
+
+# Convert FASTA to oneline format
+python main.py convert-fasta input.fasta --output output.fasta
+
+# Parse BLAST output
+python main.py parse-blast blast_results.txt top_hits.txt
+
+# See all available commands
+python main.py -h
+```
+
+## Testing
+Run tests with pytest:
+
+```bash
+pip install -r requirements.txt
+pytest test_bioinf_utils.py -v
 ```
 
 ## Dependencies
 
 - Python 3.9+
 - Biopython >= 1.81
+- pytest >= 7.0.0 (for testing)
 
 Install with:
-```
-bash
+
+```bash
 pip install -r requirements.txt
 ```
 
